@@ -1,9 +1,18 @@
 import React from 'react'
+import { Route } from 'react-router-dom'
+import HomePage from './pages/HomePage'
+import LoginPage from './pages/LoginPage'
+import ProfilePage from './pages/ProfilePage'
+import { Routes } from 'react-router-dom'
 
 function App() {
   return (
     <div>
-      
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+      </Routes>
     </div>
   )
 }
