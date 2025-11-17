@@ -5,52 +5,53 @@ import http from 'http';
 import connectDB from './lib/db.js';
 import userRouter from './routes/userRoutes.js';
 import messageRouter from './routes/messageRouter.js';
-import {server} from "socket.io";
+import { Server } from "socket.io";   // ✅ Correct import
 
-//create Express app and HTTP server
+// Create Express app and HTTP server
 const app = express();
 const server = http.createServer(app);
 
-//initialize socket.io server
-export const io = new server.Server(server, {
+// Initialize socket.io server
+export const io = new Server(server, {
     cors: {
         origin: "*"
     }
 });
 
-//store online users
-export const userSocketMap = {}; //{userId: socketId}
+// Store online users
+export const userSocketMap = {};  // { userId: socketId }
 
-//socket.io connection handler
-io.on("connection", (socket)=>{
+// Socket.io connection handler
+io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId;
-    console.log("user connected", userId);
+    console.log("User connected:", userId);
 
-    if(userId) userSocketMap[userId] = socket.id;
+    if (userId) userSocketMap[userId] = socket.id;
 
-    //emit online users to all connected clients
+    // Emit online users list
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
-    socket.on("disconnect", ()=>{
-        console.log("user Disconnected", userId);
+    socket.on("disconnect", () => {
+        console.log("User disconnected:", userId);
         delete userSocketMap[userId];
-        io.emit("getOnlineUsers", Object.keys(userSocketMap))
-    })
-})
+        io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    });
+});
 
-//middleware
+// Middleware
 app.use(cors());
-app.use(express.json({limit: '10mb'}));
+app.use(express.json({ limit: '10mb' }));
 
-
-// Routes setup
-app.use("/api/status", (req, res)=> res.send("server is live"));
+// Routes
+app.use("/api/status", (req, res) => res.send("server is live"));
 app.use("/api/auth", userRouter);
 app.use("/api/messages", messageRouter);
 
-//connect to mongoDB
+// Connect to MongoDB
 await connectDB();
 
+// Start server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => 
-    console.log("server is running port: " + PORT));
+server.listen(PORT, () => {
+    console.log("Server running on port: " + PORT);
+});
