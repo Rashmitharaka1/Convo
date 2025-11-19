@@ -1,43 +1,21 @@
+// auth.js
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 
-// Middleware to protect routes
-export const protect = async (req, res, next) => {
-    try {
-        // 1. Get token from headers
-        const token = req.headers.token;
+const protect = async (req, res, next) => {
+  try {
+    const token = req.headers.token;
+    if (!token) throw new Error("No token provided");
 
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: "No token provided"
-            });
-        }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select("-password");
+    if (!user) throw new Error("User not found");
 
-        // 2. Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        // 3. Find user by ID inside decoded token
-        const user = await User.findById(decoded.userId).select("-password");
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
-
-        // 4. Attach user to request
-        req.user = user;
-
-        // 5. Continue
-        next();
-
-    } catch (error) {
-        console.log("Protect middleware error:", error.message);
-        return res.status(401).json({
-            success: false,
-            message: "Invalid or expired token"
-        });
-    }
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ success: false, message: error.message });
+  }
 };
+
+export default protect;
