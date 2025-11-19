@@ -5,34 +5,30 @@ import cloudinary from '../lib/cloudinary.js';
 
 //Signup New User
 export const signup = async (req, res) => {
-  const { fullname, email, password, bio } = req.body;
+  const { fullName, email, password, bio } = req.body; // frontend sends fullName
 
-  try{
-    if(!fullname || !email || !password || !bio){
-      return res.json({ success: false, message: "Missing Details" })
-    }
-    const user = await User.findOne({ email });
-    if (user) {
-      return res.json({ success: false, message: "Account already exists" });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const newUser = await User.create({
-      fullname,
-      email,
-      password: hashedPassword,
-      bio
-    });
-
-    const token = generateToken(newUser._id);
-    res.json({ success: true, userData: newUser, token, message: "Account created successfully" });
-  } catch (error) {
-    console.error(error.message);
-    res.json({ success: false, message: error.message});
+  if (!fullName || !email || !password || !bio) {
+    return res.json({ success: false, message: "Missing Details" });
   }
-} 
+
+  const userExists = await User.findOne({ email });
+  if (userExists) {
+    return res.json({ success: false, message: "Account already exists" });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const newUser = await User.create({
+    fullname: fullName, // ✅ use lowercase fullname to match model
+    email,
+    password: hashedPassword,
+    bio
+  });
+
+  const token = generateToken(newUser._id);
+  res.json({ success: true, userData: newUser, token, message: "Account created successfully" });
+};
+
 
 // Controller to login a user
 export const login = async (req, res) => {
